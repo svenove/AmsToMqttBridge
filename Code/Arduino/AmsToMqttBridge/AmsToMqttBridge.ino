@@ -112,6 +112,7 @@ void setupWiFi()
 	WiFi.enableAP(false);
 	
 	// Connect to WiFi
+  WiFi.hostname("AMS2MQTT");
 	WiFi.begin(ap.config.ssid, ap.config.ssidPassword);
 	
 	while (WiFi.status() != WL_CONNECTED) {
