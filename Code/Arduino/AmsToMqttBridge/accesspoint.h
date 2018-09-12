@@ -24,6 +24,7 @@ public:
 
 private:
 	const char* AP_SSID = "AMS2MQTT";
+  const char* AP_PWD = "AMSwifiPWD";
 
 	// DNS server
 	const byte DNS_PORT = 53;

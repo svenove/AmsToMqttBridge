@@ -39,6 +39,8 @@ void accesspoint::setup(int accessPointButtonPin, Stream& debugger)
 				println("");
 				print("AP button was pressed. Booting as access point now. Look for SSID ");
 				println(this->AP_SSID);
+        print("Password: ");
+        println(this->AP_PWD);
 				isActivated = true;
 				break;
 			}
@@ -54,7 +56,7 @@ void accesspoint::setup(int accessPointButtonPin, Stream& debugger)
 		WiFi.mode(WIFI_OFF);
 		delay(2000);
 
-		WiFi.softAP(AP_SSID);
+    WiFi.softAP(AP_SSID, AP_PWD);
 		WiFi.mode(WIFI_AP);
 
 		/* Setup the DNS server redirecting all the domains to this IP */
