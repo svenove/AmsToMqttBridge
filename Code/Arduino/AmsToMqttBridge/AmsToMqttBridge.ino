@@ -6,8 +6,6 @@
 
 #include <ESP8266WiFi.h>
 #include <RemoteDebug.h> // Remote debug over telnet - not recommended for production, only for development     
-#include <DallasTemperature.h>
-#include <OneWire.h>
 #include <ArduinoJson.h>
 #include <PubSubClient.h>
 #include <DoubleResetDetector.h>  // https://github.com/datacute/DoubleResetDetector
@@ -18,12 +16,7 @@
 #include "accesspoint.h"
 
 #define WIFI_CONNECTION_TIMEOUT 30000;
-#define TEMP_SENSOR_PIN 5 // Temperature sensor connected to GPIO5
 #define LED_PIN LED_BUILTIN // The blue on-board LED of the ESP
-
-OneWire oneWire(TEMP_SENSOR_PIN);
-DallasTemperature tempSensor(&oneWire);
-long lastTempDebug = 0;
 
 // Object used to boot as Access Point
 accesspoint ap;
@@ -257,11 +250,6 @@ void readHanPort_Kamstrup(int listSize)
 		// to keep the data from the meter itself
 		JsonObject& data = root.createNestedObject("data");
 
-		// Get the temperature too
-		tempSensor.requestTemperatures();
-		float temperature = tempSensor.getTempCByIndex(0);
-		data["temp"] = temperature;
-
 		// Based on the list number, get all details 
 		// according to OBIS specifications for the meter
 		if (listSize == (int)Kamstrup::List1)
@@ -353,11 +341,6 @@ void readHanPort_Kaifa(int listSize)
 		// Add a sub-structure to the json object, 
 		// to keep the data from the meter itself
 		JsonObject& data = root.createNestedObject("data");
-
-		// Get the temperature too
-		tempSensor.requestTemperatures();
-		float temperature = tempSensor.getTempCByIndex(0);
-		data["temp"] = String(temperature);
 
     data["lSize"] = listSize;
 
