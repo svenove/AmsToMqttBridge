@@ -10,6 +10,7 @@
 #include <OneWire.h>
 #include <ArduinoJson.h>
 #include <PubSubClient.h>
+#include <DoubleResetDetector.h>  // https://github.com/datacute/DoubleResetDetector
 #include <HanReader.h>
 #include <Kaifa.h>
 #include <Kamstrup.h>
@@ -18,7 +19,7 @@
 
 #define WIFI_CONNECTION_TIMEOUT 30000;
 #define TEMP_SENSOR_PIN 5 // Temperature sensor connected to GPIO5
-#define LED_PIN 2 // The blue on-board LED of the ESP
+#define LED_PIN LED_BUILTIN // The blue on-board LED of the ESP
 
 OneWire oneWire(TEMP_SENSOR_PIN);
 DallasTemperature tempSensor(&oneWire);
@@ -34,6 +35,18 @@ PubSubClient mqtt;
 // Objects used for debugging
 HardwareSerial* debugger = NULL;
 RemoteDebug Debug;
+
+/***********************************************
+*  Double Reset detector
+***********************************************/
+// Number of seconds after reset during which a 
+// subseqent reset will be considered a double reset.
+#define DRD_TIMEOUT 10
+
+// RTC Memory Address for the DoubleResetDetector to use
+#define DRD_ADDRESS 0
+
+DoubleResetDetector drd(DRD_TIMEOUT, DRD_ADDRESS);
 
 // The HAN Port reader, used to read serial data and decode DLMS
 HanReader hanReader;
@@ -53,25 +66,15 @@ void setup() {
     rdebugI("Started...");
 	}
 
-	// Assign pin for boot as AP
-	delay(1000);
-	pinMode(0, INPUT_PULLUP);
-	
-	// Flash the blue LED, to indicate we can boot as AP now
 	pinMode(LED_PIN, OUTPUT);
-	digitalWrite(LED_PIN, LOW);
 	
 	// Initialize the AP
-	ap.setup(0, Serial);
-	
-	// Turn off the blue LED
-	digitalWrite(LED_PIN, HIGH);
+	ap.setup(Serial, drd.detectDoubleReset(), LED_PIN);
 
 	if (!ap.isActivated)
 	{
 		setupWiFi();
 		hanReader.setup(&Serial, 2400, SERIAL_8E1, debugger);
-    //hanReader.setRemoteDebug(&Debug);
 		
 		// Compensate for the known Kaifa bug
 		hanReader.compensateFor09HeaderBug = (ap.config.meterType == 1);
@@ -100,6 +103,8 @@ void loop()
 			// Read data from the HAN port
 			readHanPort();
 		}
+    //    Double reset detection enabled
+    drd.loop();
 	}
 	else
 	{
@@ -134,7 +139,7 @@ void setupWiFi()
 	mqtt.setServer(ap.config.mqtt, ap.config.mqttPort);
 
  if (MQTT_MAX_PACKET_SIZE < 500) {
-  rdebugW("PubSub.h MQTT_MAX_PACKET_SIZE should be set to 1025, is %d!", MQTT_MAX_PACKET_SIZE);
+  rdebugW("PubSubClient.h MQTT_MAX_PACKET_SIZE should be set to 1024, is %d!", MQTT_MAX_PACKET_SIZE);
  }
 
 	// Direct incoming MQTT messages

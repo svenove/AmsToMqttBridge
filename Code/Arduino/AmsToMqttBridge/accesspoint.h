@@ -16,7 +16,7 @@
 
 class accesspoint {
 public:
-	void setup(int accessPointButtonPin, Stream& debugger);
+	void setup(Stream& debugger, bool drd, int led_pin);
 	bool loop();
 	bool hasConfig();
 	configuration config;

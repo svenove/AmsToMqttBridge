@@ -11,45 +11,36 @@ bool accesspoint::hasConfig() {
 	return config.hasConfig();
 }
 
-void accesspoint::setup(int accessPointButtonPin, Stream& debugger) 
+void accesspoint::setup(Stream& debugger, bool drd, int led_pin) 
 {
 	this->debugger = &debugger;
 
 	// Test if we're missing configuration
-	if (!config.hasConfig())
-	{
+	if (!config.hasConfig()) {
 		print("No config. We're booting as AP. Look for SSID ");
 		println(this->AP_SSID);
 		isActivated = true;
 	}
-	else
-	{
+	else {
 		// Load the configuration
 		config.load();
-		if (this->debugger) config.print(debugger);
+		if (this->debugger) 
+		  config.print(debugger);
 
-		// Test if we're holding down the AP pin, over 5 seconds
-		int time = millis() + 5000;
-		print("Press the AP button now to boot as access point");
-		while (millis() < time)
-		{
-			print(".");
-			if (digitalRead(accessPointButtonPin) == LOW)
-			{
+    // Double reset detected - AP-mode
+    if (drd) {
+        digitalWrite(led_pin, LOW);
+        
 				println("");
-				print("AP button was pressed. Booting as access point now. Look for SSID ");
+				print("Double reset detected. Booting as access point now. Look for SSID ");
 				println(this->AP_SSID);
         print("Password: ");
         println(this->AP_PWD);
-				isActivated = true;
-				break;
-			}
-			delay(100);
+				isActivated = true;			
 		}
 	}
 
-	if (isActivated)
-	{
+	if (isActivated) {
 		// Setup AP
 		WiFi.disconnect(true);
 		WiFi.softAPdisconnect(true);
@@ -147,7 +138,8 @@ void accesspoint::handleSave() {
 
 	println("Saving configuration now...");
 
-	if (accesspoint::debugger) config->print(*accesspoint::debugger);
+	if (accesspoint::debugger) 
+	  config->print(*accesspoint::debugger);
 	if (config->save())
 	{
 		println("Successfully saved. Will roboot now.");
